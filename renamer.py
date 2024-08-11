@@ -1,7 +1,11 @@
 import os
 import re
+import sys
 import PyPDF2
 from typing import Optional
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 def extract_date_and_amount(pdf_path: str) -> Optional[str]:
     with open(pdf_path, 'rb') as file:
@@ -13,7 +17,7 @@ def extract_date_and_amount(pdf_path: str) -> Optional[str]:
         # Extract the first date after "Domicilio:"
         date_match = re.search(r'Domicilio:\s*(\d{2}/\d{2}/\d{4})', text)
         if not date_match:
-            print("Date not found")  # Debugging line
+            print("Date not found")
             return None
         date = date_match.group(1)
         day, month, year = date.split('/')
@@ -21,11 +25,9 @@ def extract_date_and_amount(pdf_path: str) -> Optional[str]:
         # Updated regex to extract the amount before "Subtotal: $"
         amount_match = re.search(r'(\d+,\d{2})Subtotal:\s\$', text)
         if not amount_match:
-            print("Amount not found")  # Debugging line
+            print("Amount not found")
             return None
         amount = amount_match.group(1).replace('.', '').replace(',', '.')
-
-        # Convert the amount to a float
         amount_float = float(amount)
 
         # Format amount as "10k" if >= 10_000
@@ -34,7 +36,6 @@ def extract_date_and_amount(pdf_path: str) -> Optional[str]:
         else:
             amount_str = str(int(amount_float))
 
-        # Create new file name
         month_name = {
             '01': 'January', '02': 'February', '03': 'March', '04': 'April',
             '05': 'May', '06': 'June', '07': 'July', '08': 'August',
@@ -68,6 +69,13 @@ def rename_files_in_directory(files_path: str):
             os.rename(file_path, new_file_path)
             print(f"Renamed '{filename}' to '{new_name}'")
 
-# Example: '~/Documents/finances/receipts'
-files_path = ''
-rename_files_in_directory(files_path)
+def main():
+    if len(sys.argv) < 2:
+        eprint("No directory path provided.")
+        sys.exit(1)
+
+    files_path = sys.argv[1]
+    rename_files_in_directory(files_path)
+
+if __name__ == "__main__":
+    main()
